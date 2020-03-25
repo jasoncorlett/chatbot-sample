@@ -1,0 +1,57 @@
+version: '3.0'
+
+services:
+  rasa:
+    image: rasa/rasa:1.9.0-full
+    networks: ['rasa-network']
+    ports:
+    - "5005:5005"
+    volumes:
+    - "./rasa-app-data/:/app/"
+    command:
+    - run
+
+  action_server:
+    image: rasa/rasa-sdk:1.9.0
+    networks: ['rasa-network']
+    ports:
+    - "5055:5055"
+    volumes:
+    - "./rasa-app-data:/app/actions"
+
+  duckling:
+    image: rasa/duckling:0.1.6.2
+    networks: ['rasa-network']
+    ports:
+    - "5080:8000"
+
+  mm-db:
+    image: mattermost/mattermost-prod-db:latest
+    networks: ['rasa-network']
+    environment:
+    - POSTGRES_USER=mmuser
+    - POSTGRES_PASSWORD=Password1
+    - POSTGRES_DB=mattermost
+
+  mm-app:
+    image: mattermost/mattermost-prod-app
+    networks: ['rasa-network']
+    environment:
+    - DB_HOST=mm-db
+    - MM_USERNAME=mmuser
+    - MM_PASSWORD=Password1
+    - MM_DBNAME=mattermost
+    - edition=team
+
+  mm-web:
+    image: mattermost/mattermost-prod-web
+    ports:
+    - "80:80"
+    - "443:443"
+    networks: ['rasa-network']
+    environment:
+    - APP_HOST=mm-app
+    - APP_PORT=80
+
+
+networks: {rasa-network: {}}
